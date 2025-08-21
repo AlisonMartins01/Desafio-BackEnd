@@ -22,7 +22,7 @@ Plataforma para cadastro de motos e entregadores, locações com regras de negó
 ---
 
 ## Stack
-- **.NET 8 / ASP.NET Core** (Web API)
+- **.NET 9 / ASP.NET Core** (Web API)
 - **Clean Architecture + DDD + SOLID**
 - **MediatR** (CQRS leve: Commands/Queries/Handlers)
 - **EF Core 8 (Npgsql)** + Repositories + Unit of Work
