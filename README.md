@@ -9,7 +9,6 @@ Plataforma para cadastro de motos e entregadores, locações com regras de negó
 - [Arquitetura](#arquitetura)
 - [Como rodar](#como-rodar)
   - [Com Docker Compose (recomendado)](#com-docker-compose-recomendado)
-  - [Rodando localmente (sem Docker)](#rodando-localmente-sem-docker)
 - [Configuração (appsettings & env)](#configuração-appsettings--env)
 - [Banco de dados & Migrations](#banco-de-dados--migrations)
 - [Mensageria](#mensageria)
