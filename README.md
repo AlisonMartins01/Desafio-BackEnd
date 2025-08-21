@@ -72,27 +72,17 @@ Pré-requisitos: Docker + Docker Compose.
 ```bash
 # na raiz do repositório
 docker compose up -d --build
+# aplicar as migrations
+dotnet ef database update --project src/Rentals.Infrastructure --startup-project src/Rentals.Api
 ```
+IMPORTANTE: Nao esqueca de alterar os arquivos docker-compose.yml e appsettings.json para o seu respectivo USERNAME E PASSWORD, para acessar o banco. 
+
 Serviços expostos (padrão):
 - API: http://localhost:5089/swagger
 - Postgres: localhost:5432 (db: `rentalsdb`, user: `postgres`, pwd: `452313`)
 - RabbitMQ: http://localhost:15672 (guest/guest)
 - MinIO: http://localhost:9003 (console) e http://localhost:9002 (S3)
 
-> A API aplica migrations automaticamente (apenas em **Development**) quando existem pendências.
-
-### Rodando localmente (sem Docker)
-Pré-requisitos: .NET 8 SDK, Postgres, RabbitMQ e MinIO locais.
-
-1. Configure `appsettings.Development.json` (ou use **User-Secrets** / **env**). Veja [Configuração](#configuração-appsettings--env).
-2. Garanta que Postgres/Rabbit/MinIO estão no ar.
-3. Rode a API:
-   ```bash
-   dotnet run --project src/Rentals.Api
-   ```
-4. Abra o Swagger: http://localhost:5089/swagger
-
----
 
 ## Configuração (appsettings & env)
 O projeto lê a connection string em ordem de precedência:
