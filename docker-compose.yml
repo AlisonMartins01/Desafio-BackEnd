@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: rentals_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=452313
+      - POSTGRES_DB=rentals
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    networks:
+      - rentals-net
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Rentals.Api/Dockerfile
+    container_name: rentals_api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080 
+      - ConnectionStrings__Default=Host=postgres;Port=5432;Database=rentals;Username=postgres;Password=452313
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest   
+    ports:
+      - "5089:8080"
+    depends_on:
+      - postgres
+      - minio
+      - rabbitmq
+    networks:
+      - rentals-net
+  
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:  
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes: 
+      - "miniodata:/data"
+    networks: 
+      - "rentals-net"
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rentals_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # console
+    networks: 
+      - "rentals-net"
+   
+
+volumes:
+  pgdata:
+  miniodata:
+
+networks:
+  rentals-net:
