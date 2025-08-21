@@ -65,7 +65,7 @@ Plataforma para cadastro de motos e entregadores, locações com regras de negó
 
 ## Como rodar
 
-### Com Docker Compose (recomendado)
+### Com Docker Compose 
 Pré-requisitos: Docker + Docker Compose.
 
 ```bash
