@@ -1,76 +1,287 @@
-# Desafio backend Mottu.
-Seja muito bem-vindo ao desafio backend da Mottu, obrigado pelo interesse em fazer parte do nosso time e ajudar a melhorar a vida de milhares de pessoas.
+# Rentals Service
 
-## Instruções
-- O desafio é válido para diversos níveis, portanto não se preocupe se não conseguir resolver por completo.
-- A aplicação só será avaliada se estiver rodando, se necessário crie um passo a passo para isso.
-- Faça um clone do repositório em seu git pessoal para iniciar o desenvolvimento e não cite nada relacionado a Mottu.
-- Após teste realizado, favor encaminha-lo via Link abaixo:
-Link: [Formulário - Mottu - Desafio Backend](https://forms.office.com/r/25yMPCax5S)
+Plataforma para cadastro de motos e entregadores, locações com regras de negócio (planos, multas e extras), upload de CNH em storage externo e mensageria para eventos de domínio. Implementado com **Clean Architecture + DDD + SOLID**, **EF Core (PostgreSQL)**, **MassTransit + RabbitMQ (EF Outbox)**, **MinIO** e **MediatR**.
 
-## Requisitos não funcionais 
-- A aplicação deverá ser construida com .Net utilizando C#.
-- Utilizar apenas os seguintes bancos de dados (Postgress, MongoDB)
-    - Não utilizar PL/pgSQL
-- Escolha o sistema de mensageria de sua preferencia( RabbitMq, Sqs/Sns , Kafka, Gooogle Pub/Sub ou qualquer outro)
+---
 
-## Aplicação a ser desenvolvida
-Seu objetivo é criar uma aplicação para gerenciar aluguel de motos e entregadores. Quando um entregador estiver registrado e com uma locação ativa poderá também efetuar entregas de pedidos disponíveis na plataforma.
+## Sumário
+- [Stack](#stack)
+- [Arquitetura](#arquitetura)
+- [Como rodar](#como-rodar)
+  - [Com Docker Compose (recomendado)](#com-docker-compose-recomendado)
+  - [Rodando localmente (sem Docker)](#rodando-localmente-sem-docker)
+- [Configuração (appsettings & env)](#configuração-appsettings--env)
+- [Banco de dados & Migrations](#banco-de-dados--migrations)
+- [Mensageria](#mensageria)
+- [Storage de CNH](#storage-de-cnh)
+- [Logging & Healthchecks](#logging--healthchecks)
+- [Endpoints principais](#endpoints-principais)
+- [Testes](#testes)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Troubleshooting](#troubleshooting)
 
-Iremos executar um teste de integração para validar os cenários de uso. Por isso, sua aplicação deve seguir exatamente as especificações de API`s Rest do nosso Swager: request, response e status code.
-Garanta que os atributos dos JSON`s e estão de acordo com o Swagger abaixo.
+---
 
-Swagger de referência:
-https://app.swaggerhub.com/apis-docs/Mottu/mottu_desafio_backend/1.0.0
+## Stack
+- **.NET 8 / ASP.NET Core** (Web API)
+- **Clean Architecture + DDD + SOLID**
+- **MediatR** (CQRS leve: Commands/Queries/Handlers)
+- **EF Core 8 (Npgsql)** + Repositories + Unit of Work
+- **RabbitMQ + MassTransit** com **EF Outbox** (consistência transacional)
+- **MinIO** (S3 compatível) para armazenar **imagem da CNH**
+- **Swagger** (documentação da API)
+- **Serilog** (logs estruturados) + **HealthChecks**
 
-### Casos de uso
-- Eu como usuário admin quero cadastrar uma nova moto.
-  - Os dados obrigatórios da moto são Identificador, Ano, Modelo e Placa
-  - A placa é um dado único e não pode se repetir.
-  - Quando a moto for cadastrada a aplicação deverá gerar um evento de moto cadastrada
-    - A notificação deverá ser publicada por mensageria.
-    - Criar um consumidor para notificar quando o ano da moto for "2024"
-    - Assim que a mensagem for recebida, deverá ser armazenada no banco de dados para consulta futura.
-- Eu como usuário admin quero consultar as motos existentes na plataforma e conseguir filtrar pela placa.
-- Eu como usuário admin quero modificar uma moto alterando apenas sua placa que foi cadastrado indevidamente
-- Eu como usuário admin quero remover uma moto que foi cadastrado incorretamente, desde que não tenha registro de locações.
-- Eu como usuário entregador quero me cadastrar na plataforma para alugar motos.
-    - Os dados do entregador são( identificador, nome, cnpj, data de nascimento, número da CNHh, tipo da CNH, imagemCNH)
-    - Os tipos de cnh válidos são A, B ou ambas A+B.
-    - O cnpj é único e não pode se repetir.
-    - O número da CNH é único e não pode se repetir.
-- Eu como entregador quero enviar a foto de minha cnh para atualizar meu cadastro.
-    - O formato do arquivo deve ser png ou bmp.
-    - A foto não poderá ser armazenada no banco de dados, você pode utilizar um serviço de storage( disco local, amazon s3, minIO ou outros).
-- Eu como entregador quero alugar uma moto por um período.
-    - Os planos disponíveis para locação são:
-        - 7 dias com um custo de R$30,00 por dia
-        - 15 dias com um custo de R$28,00 por dia
-        - 30 dias com um custo de R$22,00 por dia
-        - 45 dias com um custo de R$20,00 por dia
-        - 50 dias com um custo de R$18,00 por dia
-    - A locação obrigatóriamente tem que ter uma data de inicio e uma data de término e outra data de previsão de término.
-    - O inicio da locação obrigatóriamente é o primeiro dia após a data de criação.
-    - Somente entregadores habilitados na categoria A podem efetuar uma locação
-- Eu como entregador quero informar a data que irei devolver a moto e consultar o valor total da locação.
-    - Quando a data informada for inferior a data prevista do término, será cobrado o valor das diárias e uma multa adicional
-        - Para plano de 7 dias o valor da multa é de 20% sobre o valor das diárias não efetivadas.
-        - Para plano de 15 dias o valor da multa é de 40% sobre o valor das diárias não efetivadas.
-    - Quando a data informada for superior a data prevista do término, será cobrado um valor adicional de R$50,00 por diária adicional.
-    
+---
 
-## Diferenciais 🚀
-- Testes unitários
-- Testes de integração
-- EntityFramework e/ou Dapper
-- Docker e Docker Compose
-- Design Patterns
-- Documentação
-- Tratamento de erros
-- Arquitetura e modelagem de dados
-- Código escrito em língua inglesa
-- Código limpo e organizado
-- Logs bem estruturados
-- Seguir convenções utilizadas pela comunidade
-  
+## Arquitetura
+**Camadas**:
+```
+/src
+  Rentals.Api              → Interface REST (controllers, DTOs PT-BR, Swagger, health)
+  Rentals.Application      → Casos de uso (CQRS), validações, portas (abstrações)
+  Rentals.Domain           → Entidades, Value Objects, regras, serviços de domínio
+  Rentals.Infrastructure   → EF Core/Npgsql, repositórios, UoW, MassTransit, MinIO
+  tests/                   → Testes unitários
+```
+
+**Fluxo de negócio (exemplo)** — cadastro de moto → evento:
+1. `POST /motos` cria a moto (EF Core).
+2. Handler publica **evento** `MotorcycleRegistered` (via **IEventBus** adaptado com MassTransit).
+3. **EF Outbox** garante publicação após `SaveChanges()` (idempotência).
+4. **Consumer** persiste uma **notificação** quando `ano == 2024` (consulta futura).
+
+**Regras-chave**
+- **Locação**: planos (7/15/30/45/50 dias) com diárias e penalidades:
+  - 7d → R$30/dia, multa **20%** por diária **não efetivada** (devolução antecipada).
+  - 15d → R$28/dia, multa **40%** por diária **não efetivada**.
+  - 30d → R$22/dia; 45d → R$20/dia; 50d → R$18/dia.
+  - Devolução **após** a previsão: **R$50/dia extra**.
+  - Início sempre **no dia seguinte** à criação.
+  - Apenas entregadores com **categoria A** podem alugar.
+- **CNH**: upload **png/bmp** para **MinIO** (não armazena binário no banco).
+- **Moto**: placa única; **remoção proibida** se houver locações (ativas ou históricas).
+
+---
+
+## Como rodar
+
+### Com Docker Compose (recomendado)
+Pré-requisitos: Docker + Docker Compose.
+
+```bash
+# na raiz do repositório
+docker compose up -d --build
+```
+Serviços expostos (padrão):
+- API: http://localhost:5089/swagger
+- Postgres: localhost:5432 (db: `rentalsdb`, user: `postgres`, pwd: `452313`)
+- RabbitMQ: http://localhost:15672 (guest/guest)
+- MinIO: http://localhost:9003 (console) e http://localhost:9002 (S3)
+
+> A API aplica migrations automaticamente (apenas em **Development**) quando existem pendências.
+
+### Rodando localmente (sem Docker)
+Pré-requisitos: .NET 8 SDK, Postgres, RabbitMQ e MinIO locais.
+
+1. Configure `appsettings.Development.json` (ou use **User-Secrets** / **env**). Veja [Configuração](#configuração-appsettings--env).
+2. Garanta que Postgres/Rabbit/MinIO estão no ar.
+3. Rode a API:
+   ```bash
+   dotnet run --project src/Rentals.Api
+   ```
+4. Abra o Swagger: http://localhost:5089/swagger
+
+---
+
+## Configuração (appsettings & env)
+O projeto lê a connection string em ordem de precedência:
+1. `ConnectionStrings__Default` (env/user-secrets/appsettings)
+2. Variáveis padrão PG (`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`)
+3. Fallback (localhost/app/app)
+
+**Arquivo de exemplo** (`src/Rentals.Api/appsettings.Development.json.example`):
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=rentalsdb;Username=app;Password=app"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Username": "guest",
+    "Password": "guest"
+  },
+  "Minio": {
+    "Endpoint": "http://localhost:9002",
+    "AccessKey": "minio",
+    "SecretKey": "minio123",
+    "Bucket": "cnh-images"
+  }
+}
+```
+Copie para `appsettings.Development.json` e ajuste se necessário.
+
+
+IMPORTANTE: Nao esqueca de alterar os arquivos docker-compose.yml e appsettings.json para o seu respectivo USERNAME E PASSWORD, para acessar o banco. 
+
+---
+
+## Banco de dados & Migrations
+- As migrations ficam em `src/Rentals.Infrastructure/Persistence/Migrations`.
+- Em **Development**, o startup da API executa **migrate se houver pendentes**.
+- Manualmente, você pode rodar:
+  ```bash
+  dotnet ef database update -p src/Rentals.Infrastructure -s src/Rentals.Api
+  ```
+
+---
+
+## Mensageria
+- **Evento**: `MotorcycleRegistered` publicado no cadastro de moto.
+- **Bus**: MassTransit + RabbitMQ com **EF Outbox** (entrega após commit da transação).
+- **Fila do consumer**: `motorcycle-registered-notifications` (definição explícita).
+- **Consumer**: salva **notificação** quando `Year == 2024`.
+- **Consulta administrativa** (opcional): `GET /notificacoes/motos?ano=2024`.
+
+---
+
+## Storage de CNH
+- Upload **multipart/form-data** em endpoint de entregador.
+- Aceita **png** ou **bmp**.
+- Armazena no **MinIO** (bucket configurável) e guarda apenas a **URL** no banco.
+
+---
+
+## Logging & Healthchecks
+- **Serilog** com enriquecedores (ambiente, máquina, processo, thread) e request logging.
+- **Healthchecks**:
+  - `/health/live` → liveness
+  - `/health/ready` → Postgres, RabbitMQ, MinIO, MassTransit bus
+
+Exemplo de resposta `/health/ready`:
+```json
+{
+  "status":"Healthy",
+  "entries":{
+    "postgres":{"status":"Healthy"},
+    "rabbitmq":{"status":"Healthy"},
+    "minio":{"status":"Healthy"},
+    "masstransit-bus":{"status":"Healthy"}
+  }
+}
+```
+
+---
+
+## Endpoints principais
+> **Nomes dos campos e rotas seguem o Swagger de referência (PT-BR)**.
+
+### Motos
+- **POST `/motos`** — cadastra moto
+  ```json
+  {
+    "identificador": "moto123",
+    "modelo": "CG 160",
+    "ano": 2024,
+    "placa": "ABC1D23"
+  }
+  ```
+- **GET `/motos?placa=ABC1D23&page=1&pageSize=20`** — lista com filtro por placa
+- **GET `/motos/{identificador}`** — busca por identificador
+- **GET `/motos/placa/{placa}`** — busca por placa
+- **PUT `/motos/{identificador}/placa`** — altera placa
+- **DELETE `/motos/{identificador}`** — remove moto (**bloqueado** se houver locações)
+
+### Entregadores
+- **POST `/entregadores`** — cadastra entregador (CNPJ e CNH únicos)
+- **PUT `/entregadores/{identificador}/cnh`** — upload de imagem da CNH (**png/bmp**)
+
+### Locações
+- **POST `/locacoes`** — cria locação
+  ```json
+  {
+    "entregador_id": "entregador123",
+    "moto_id": "moto123",
+    "data_inicio": "2024-01-01T00:00:00Z",
+    "data_termino": "2024-01-07T23:59:59Z",
+    "data_previsao_termino": "2024-01-07T23:59:59Z",
+    "plano": 7
+  }
+  ```
+- **GET `/locacoes/{id}`** — detalhe da locação
+- **PUT `/locacoes/{id}/devolucao`** — informa devolução
+  ```json
+  {
+    "data_devolucao": "2024-01-07T18:00:00Z"
+  }
+  ```
+
+### Erros (exemplo)
+- `400`:
+  ```json
+  { "mensagem": "Dados inválidos" }
+  ```
+- `404`:
+  ```json
+  { "mensagem": "Moto não encontrada" }
+  ```
+
+---
+
+## Testes
+### Unitários
+- VO: **Plate**, **Cnpj**, **CnhNumber**
+- Serviço: **PricingService** (diárias, multa, extra)
+- Entidade: **Rental** (datas, devolução antecipada/tardia)
+- Handlers: `CreateRentalHandler` (categoria A, moto já locada), `CreateMotorcycleHandler` (publicação de evento)
+
+Rodar:
+```bash
+dotnet test tests/Rentals.UnitTests -v n
+```
+
+### Integração (opcional)
+- Testcontainers (Postgres, RabbitMQ, MinIO) + WebApplicationFactory.
+- Ex.: criar moto (ano 2024) → verificar notificação persistida pelo consumer.
+
+---
+
+## Estrutura de pastas
+```
+src/
+  Rentals.Api/
+    Controllers/         # Controllers 
+    Contracts/           # DTOs HTTP (PT-BR)
+    Swagger/             # exemplos e configuração
+  Rentals.Application/
+    Abstractions/        # portas (ex.: IEventBus, repos, UoW)
+    Behaviors/           # pipeline MediatR (ex.: Validation/Logging)
+    Motorcycles/         # Commands/Queries/Handlers/Validators
+    Rentals/             # idem para locações
+    Services/            # IPricingService
+  Rentals.Domain/
+    Entities/ ValueObjects/ Enums/ Services/
+  Rentals.Infrastructure/
+    Persistence/         # DbContext, configs, repositórios, migrations
+    Messaging/           # MassTransit (event bus, consumers, definitions)
+    Storage/             # MinIO/Local storage
+```
+
+---
+
+## Troubleshooting
+- **PendingModelChangesWarning** no startup:
+  - Geração de migration ficou para trás do modelo. Gere uma nova migration e commit.
+  - Em dev, o startup aplica **só se houver pendentes**.
+- **Erro de conexão com Postgres**:
+  - Verifique `ConnectionStrings__Default` ou use variáveis PG (`PGHOST`, `PGUSER`, …).
+- **Upload CNH falha**:
+  - Confirme `Minio:Endpoint/AccessKey/SecretKey/Bucket`
+- **Fila do consumer**:
+  - RabbitMQ UI: http://localhost:15672 → `motorcycle-registered-notifications` deve aparecer **ready**.
+
+---
+
+## Licença
+Uso educacional/demonstração.
 
