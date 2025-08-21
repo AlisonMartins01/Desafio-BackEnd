@@ -1,0 +1,19 @@
+﻿{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=rentals;Username=SEU_USERNAME_PG;Password=SUA_SENHA_PG"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Username": "guest",
+    "Password": "guest"
+  },
+  "Minio": {
+    "Endpoint": "http://localhost:9002",
+    "AccessKey": "minio",
+    "SecretKey": "minio123",
+    "Bucket": "cnh-images"
+  },
+  "Logging": {
+    "Level": "Information"
+  }
+}

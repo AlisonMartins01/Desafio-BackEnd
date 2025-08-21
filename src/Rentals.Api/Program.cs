@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.FileProviders;
 using Minio;
 using Minio.AspNetCore.HealthChecks;
@@ -41,6 +42,18 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 
 
+string? BuildPgFromEnv()
+{
+    var host = Environment.GetEnvironmentVariable("PGHOST");
+    if (string.IsNullOrWhiteSpace(host)) return null;
+    var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    var db = Environment.GetEnvironmentVariable("PGDATABASE") ?? "rentalsdb";
+    var user = Environment.GetEnvironmentVariable("PGUSER") ?? "app";
+    var pwd = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "app";
+    return $"Host={host};Port={port};Database={db};Username={user};Password={pwd}";
+}
+
+
 builder.Host.UseSerilog();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -64,10 +77,16 @@ builder.Services.AddMediatR(cfg => {
 });
 
 // DbContext (Postgres)
-var cs = builder.Configuration.GetConnectionString("Default")
-         ?? "Host=localhost;Port=5432;Database=rentals;Username=postgres;Password=452313";
+var cs =
+    builder.Configuration.GetConnectionString("Default")              
+    ?? BuildPgFromEnv()                                            
+    ?? "Host=localhost;Port=5432;Database=rentals;Username=postgres;Password=452313"; 
+
+         ;
 builder.Services.AddDbContext<RentalsDbContext>(opt =>
-    opt.UseNpgsql(cs, b => b.MigrationsAssembly(typeof(RentalsDbContext).Assembly.FullName))
+    opt.UseNpgsql(cs)
+       .ConfigureWarnings(warnings =>
+           warnings.Ignore(RelationalEventId.PendingModelChangesWarning))
 );
 
 builder.Services.AddMassTransit(x =>
@@ -93,23 +112,17 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(ctx);
     });
 });
-// Domínio / Serviços
 builder.Services.AddSingleton<IPricingService, PricingService>();
 
-// Repositórios + UoW
 builder.Services.AddScoped<IMotorcycleRepository, MotorcycleRepository>();
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 
-// Serviços de Armazenamento (implementar outro e trocar aqui para mudar)
 builder.Services.AddSingleton<IStorageService, MinioStorageService>();
 
-// Pipeline Behaviors (execução em cadeia para cada request via MediatR)
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
-
-// Swagger (opcional, mas útil)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => { c.ExampleFilters(); });
 builder.Services.AddSwaggerExamplesFromAssemblyOf<ErroResponseExample>();
@@ -145,7 +158,6 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Middleware simples de ProblemDetails (sem pacote externo)
 app.UseExceptionHandler(errApp =>
 {
     errApp.Run(async ctx =>
@@ -181,7 +193,6 @@ if (app.Environment.IsDevelopment())
 
 app.Use(async (ctx, next) =>
 {
-    // pega/gera um X-Correlation-ID e injeta no log context
     var cid = ctx.Request.Headers.TryGetValue("X-Correlation-ID", out var h) && !string.IsNullOrWhiteSpace(h)
         ? h.ToString()
         : ctx.TraceIdentifier;
@@ -194,21 +205,42 @@ app.Use(async (ctx, next) =>
 });
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
-    Predicate = _ => false // só diz que o processo está vivo
+    Predicate = _ => false 
 });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = _ => true,
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-//logs automáticos de request/response
 app.UseSerilogRequestLogging(opts =>
 {
     opts.IncludeQueryInRequestPath = true;
     opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
 });
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<RentalsDbContext>();
 
+    var retries = 5;
+    while (retries > 0)
+    {
+        try
+        {
+            context.Database.EnsureCreated(); 
+            break;
+        }
+        catch (Exception ex)
+        {
+            retries--;
+            if (retries == 0) throw;
+
+            Console.WriteLine($"Database not ready, retrying in 5 seconds... ({ex.Message})");
+            await Task.Delay(5000);
+        }
+    }
+}
 app.MapControllers();
+
 
 
 app.Run();

@@ -21,7 +21,6 @@ namespace Rentals.Infrastructure.Messaging.Consumers
         {
             var msg = context.Message;
 
-            // apenas ano 2024 → grava notificação
             if (msg.Year == 2024)
             {
                 var notif = Domain.Entities.MotorcycleNotification.Create(

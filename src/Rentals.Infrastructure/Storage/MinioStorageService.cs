@@ -28,7 +28,7 @@ namespace Rentals.Infrastructure.Storage
         {
             _opt = options.Value;
 
-            var uri = new Uri(_opt.Endpoint); // suporta "http://host:port" ou "https://..."
+            var uri = new Uri(_opt.Endpoint);
             var builder = new MinioClient()
                 .WithEndpoint(uri.Host, uri.Port)
                 .WithCredentials(_opt.AccessKey, _opt.SecretKey);
@@ -41,7 +41,6 @@ namespace Rentals.Infrastructure.Storage
 
         public async Task<string> SaveCnhImageAsync(string identifier, string fileName, string contentType, Stream content, CancellationToken ct)
         {
-            // Garante bucket
             bool exists = await _client.BucketExistsAsync(new BucketExistsArgs().WithBucket(_opt.Bucket), ct);
             if (!exists)
                 await _client.MakeBucketAsync(new MakeBucketArgs().WithBucket(_opt.Bucket), ct);
@@ -49,7 +48,6 @@ namespace Rentals.Infrastructure.Storage
             var ext = contentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) ? ".png" : ".bmp";
             var objectName = $"{identifier:N}/cnh{ext}";
 
-            // PutObject: se o stream não tiver Length, bufferizamos (arquivo é pequeno)
             Stream uploadStream = content;
             long size;
 
@@ -75,7 +73,6 @@ namespace Rentals.Infrastructure.Storage
 
             await _client.PutObjectAsync(put, ct);
 
-            // URL pública (se configurada) ou pré-assinada (privado)
             if (!string.IsNullOrWhiteSpace(_opt.PublicBaseUrl))
                 return $"{_opt.PublicBaseUrl!.TrimEnd('/')}/{objectName}";
 
@@ -83,7 +80,7 @@ namespace Rentals.Infrastructure.Storage
                 new PresignedGetObjectArgs()
                     .WithBucket(_opt.Bucket)
                     .WithObject(objectName)
-                    .WithExpiry(60 * 60) // 1h
+                    .WithExpiry(60 * 60)
             );
 
             return presigned;

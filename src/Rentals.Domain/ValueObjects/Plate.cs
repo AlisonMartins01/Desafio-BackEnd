@@ -20,7 +20,6 @@ namespace Rentals.Domain.ValueObjects
                 throw new DomainException("Placa obrigatória.");
 
             var v = raw.Trim().ToUpperInvariant().Replace("-", "");
-            // BR antigo: ABC1234 | Mercosul: ABC1D23
             var old = new Regex(@"^[A-Z]{3}[0-9]{4}$", RegexOptions.Compiled);
             var mercosul = new Regex(@"^[A-Z]{3}[0-9][A-Z][0-9]{2}$", RegexOptions.Compiled);
 

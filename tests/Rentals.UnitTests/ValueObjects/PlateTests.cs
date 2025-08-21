@@ -11,10 +11,10 @@ namespace Rentals.UnitTests.ValueObjects
     public class PlateTests
     {
         [Theory]
-        [InlineData("ABC1D23")]   // Mercosul
-        [InlineData("ABC-1D23")]  // com hífen
-        [InlineData("ABC1234")]   // formato antigo
-        [InlineData("abc1d23")]   // minúsculas
+        [InlineData("ABC1D23")]
+        [InlineData("ABC-1D23")] 
+        [InlineData("ABC1234")]   
+        [InlineData("abc1d23")]   
         public void Create_should_normalize_and_accept_valid_formats(string input)
         {
             var plate = Plate.Create(input);
@@ -27,11 +27,11 @@ namespace Rentals.UnitTests.ValueObjects
         [InlineData("AB12345")]
         [InlineData("ABCD123")]
         [InlineData("1234567")]
-        [InlineData("A1C1D23")] // letra/número trocando onde não pode
+        [InlineData("A1C1D23")] 
         public void Create_should_throw_for_invalid_plate(string input)
         {
             Action act = () => Plate.Create(input);
-            act.Should().Throw<Exception>(); // se você tem DomainException específico, troque aqui
+            act.Should().Throw<Exception>(); 
         }
     }
 }

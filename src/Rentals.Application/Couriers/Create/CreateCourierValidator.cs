@@ -13,7 +13,7 @@ namespace Rentals.Application.Couriers.Create
         {
             RuleFor(x => x.Identifier).NotEmpty().MaximumLength(80);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
-            RuleFor(x => x.Cnpj).NotEmpty().MaximumLength(18); // com máscara aceita, normalizamos
+            RuleFor(x => x.Cnpj).NotEmpty().MaximumLength(18);
             RuleFor(x => x.BirthDate).LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow));
             RuleFor(x => x.CnhNumber).NotEmpty().MaximumLength(14);
             RuleFor(x => x.LicenseType).NotEmpty().Must(v =>

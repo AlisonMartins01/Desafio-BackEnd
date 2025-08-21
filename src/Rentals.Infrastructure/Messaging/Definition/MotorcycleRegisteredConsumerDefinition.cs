@@ -12,10 +12,8 @@ namespace Rentals.Infrastructure.Messaging.Definition
     {
         public MotorcycleRegisteredConsumerDefinition()
         {
-            // nome fixo da fila
             EndpointName = "motorcycle-registered-notifications";
 
-            // opcional: limite de concorrência por instância do consumer
             ConcurrentMessageLimit = 8;
         }
 

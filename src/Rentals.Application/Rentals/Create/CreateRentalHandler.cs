@@ -47,11 +47,9 @@ namespace Rentals.Application.Rentals.Create
             if (await _rentals.HasActiveByMotorcycleAsync(moto.Id, ct))
                 throw new InvalidOperationException("Motocicleta já está locada.");
 
-            // Plano -> daily
             var plan = (RentalPlan)req.PlanDays;
             var (daily, _) = _pricing.For(plan);
 
-            // Requisito: início = amanhã (ignora body conflitante)
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var rental = Rental.Create(courier.Id, moto.Id, plan, today, daily);
 

@@ -10,8 +10,8 @@ namespace Rentals.Application.Rentals.Create
     public sealed record CreateRentalCommand(
     string CourierIdentifier,
     string MotorcycleIdentifier,
-    int PlanDays,              // 7, 15, 30, 45, 50
-    DateTime? RequestStartUtc, // vindos do body, só para validação/log
+    int PlanDays,              
+    DateTime? RequestStartUtc,
     DateTime? RequestEndUtc,
     DateTime? RequestExpectedEndUtc
 ) : IRequest<RentalDto>;

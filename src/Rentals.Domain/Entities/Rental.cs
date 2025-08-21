@@ -17,10 +17,10 @@ namespace Rentals.Domain.Entities
         public DateOnly StartDate { get; private set; }
         public DateOnly ExpectedEndDate { get; private set; }
         public DateOnly? EndDate { get; private set; }
-        public decimal DailyRate { get; private set; } // snapshot do valor/dia no momento da locação
+        public decimal DailyRate { get; private set; } 
         public RentalStatus Status { get; private set; }
 
-        private Rental() { } // EF
+        private Rental() { } 
 
         private Rental(Guid courierId, Guid motorcycleId, RentalPlan plan, DateOnly startDate, decimal dailyRate)
         {
@@ -37,9 +37,6 @@ namespace Rentals.Domain.Entities
             Status = RentalStatus.Active;
         }
 
-        /// <summary>
-        /// Cria a locação. Regra: início é o dia seguinte ao 'today' informado (aplique 'today' via Application).
-        /// </summary>
         public static Rental Create(Guid courierId, Guid motorcycleId, RentalPlan plan, DateOnly today, decimal dailyRate)
             => new(courierId, motorcycleId, plan, today.AddDays(1), dailyRate);
 
@@ -47,7 +44,6 @@ namespace Rentals.Domain.Entities
         {
             if (returnDate < StartDate) throw new DomainException("Devolução antes do início.");
 
-            // diárias concluídas contam até a data de retorno (exclusivo/inclusivo varia por regra; aqui inclusivo do start)
             var done = (returnDate.ToDateTime(TimeOnly.MinValue) - StartDate.ToDateTime(TimeOnly.MinValue)).Days + 1;
             var planned = (int)Plan;
 
@@ -63,7 +59,7 @@ namespace Rentals.Domain.Entities
         public void Finish(DateOnly returnDate)
         {
             if (Status != RentalStatus.Active) throw new DomainException("Locação não está ativa.");
-            _ = DiffDays(returnDate); // valida data
+            _ = DiffDays(returnDate);
             EndDate = returnDate;
             Status = RentalStatus.Finished;
         }

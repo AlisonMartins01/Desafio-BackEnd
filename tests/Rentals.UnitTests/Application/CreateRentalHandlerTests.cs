@@ -60,7 +60,6 @@ namespace Rentals.UnitTests.Application
         [Fact]
         public async Task Handle_should_fail_when_courier_not_A()
         {
-            // Arrange (courier B)
             var courRepo = Substitute.For<ICourierRepository>();
             var motoRepo = Substitute.For<IMotorcycleRepository>();
             var rentRepo = Substitute.For<IRentalRepository>();
@@ -79,10 +78,8 @@ namespace Rentals.UnitTests.Application
 
             var cmd = new CreateRentalCommand("cour-002", "moto-002", 7, null, null, null);
 
-            // Act
             Func<Task> act = () => handler.Handle(cmd, CancellationToken.None);
 
-            // Assert
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Entregador não habilitado na categoria A.");
         }

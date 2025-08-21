@@ -350,7 +350,6 @@ C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\sta
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\staticwebassets.development.json
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\Rentals..76A5BFAF.Up2Date
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\Rentals.Api.dll
 C:\Users\aliso\source\repos\Desafio-BackEnd\src\Rentals.Api\obj\Debug\net9.0\refint\Rentals.Api.dll

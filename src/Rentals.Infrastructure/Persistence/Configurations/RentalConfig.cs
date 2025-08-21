@@ -27,7 +27,6 @@ namespace Rentals.Infrastructure.Persistence.Configurations
             b.Property(x => x.DailyRate).HasColumnName("daily_rate").HasColumnType("numeric(10,2)").IsRequired();
             b.Property(x => x.Status).HasColumnName("status").HasConversion<int>().IsRequired();
 
-            // Relações (sem navegações na entidade)
             b.HasOne<Courier>().WithMany().HasForeignKey(x => x.CourierId).OnDelete(DeleteBehavior.Restrict);
             b.HasOne<Motorcycle>().WithMany().HasForeignKey(x => x.MotorcycleId).OnDelete(DeleteBehavior.Restrict);
 

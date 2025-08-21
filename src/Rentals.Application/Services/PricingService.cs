@@ -12,8 +12,8 @@ namespace Rentals.Application.Services
     {
         public (decimal Daily, decimal? EarlyPenaltyPct) For(RentalPlan plan) => plan switch
         {
-            RentalPlan.D7 => (30m, 0.20m), // 20% sobre diárias não realizadas
-            RentalPlan.D15 => (28m, 0.40m), // 40% sobre diárias não realizadas
+            RentalPlan.D7 => (30m, 0.20m),
+            RentalPlan.D15 => (28m, 0.40m),
             RentalPlan.D30 => (22m, null),
             RentalPlan.D45 => (20m, null),
             RentalPlan.D50 => (18m, null),
